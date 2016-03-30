@@ -1,0 +1,169 @@
+package com.ivaga.tapestry.csscombiner.less;
+
+/**
+ * A single less extends in the less file.
+ */
+class LessExtend extends LessObject implements Formattable {
+
+	private String selector;
+
+	private String[] baseSelector;
+
+	private boolean all;
+
+	private String extendingSelector;
+
+	/**
+	 * Parse the extendSelector,create the needed LessExtend objects and add it
+	 * to the container.
+	 * 
+	 * @param container
+	 *            the container that should add the created LessExtend
+	 * @param obj
+	 *            another LessObject with parse position.
+	 * @param extendSelector
+	 *            the completely selector like "foo:extends(bar all)"
+	 * @return the base selector
+	 */
+	static String addLessExtendsTo(FormattableContainer container, LessObject obj, String extendSelector) {
+		String baseSelectors = null;
+		do {
+			int idx1 = extendSelector.indexOf(":extend(");
+			int idx2 = extendSelector.indexOf(')', idx1);
+			int idx3 = extendSelector.lastIndexOf(',', idx1);
+			String selector = extendSelector.substring(idx3 + 1, idx1).trim();
+			String[] baseSelector = new String[] { selector };
+			if (baseSelectors == null) {
+				baseSelectors = selector;
+			} else {
+				baseSelectors = baseSelectors + ',' + selector;
+			}
+			String params = extendSelector.substring(idx1 + 8, idx2).trim();
+
+			for (String param : params.split(",")) {
+				boolean all = param.endsWith(" all");
+				if (all) {
+					param = param.substring(0, param.length() - 4).trim();
+				}
+				container.add(new LessExtend(obj, baseSelector, param, all));
+			}
+			idx2++;
+			if (idx2 < extendSelector.length()) {
+				while (idx2 < extendSelector.length()) {
+					char ch = extendSelector.charAt(idx2++);
+					switch (ch) {
+					case ',':
+						break;
+					case ' ':
+						continue;
+					default:
+						throw obj.createException("Unrecognized input: '" + extendSelector + "'");
+					}
+					break;
+				}
+				extendSelector = extendSelector.substring(idx2).trim();
+				if (extendSelector.length() > 0) {
+					continue;
+				}
+			}
+			break;
+		} while (true);
+		return baseSelectors;
+	}
+
+	/**
+	 * Create a new instance.
+	 * 
+	 * @param obj
+	 *            another LessObject with parse position.
+	 * @param baseSelector
+	 *            the base selector as single size array.
+	 * @param extendingSelector
+	 *            selector to extends
+	 * @param all
+	 *            If keyword "all" was set
+	 */
+	private LessExtend(LessObject obj, String[] baseSelector, String extendingSelector, boolean all) {
+		super(obj);
+
+		this.selector = baseSelector[0];
+		this.baseSelector = baseSelector;
+		this.extendingSelector = extendingSelector;
+		this.all = all;
+	}
+
+	/**
+	 * If keyword "all" was set
+	 * 
+	 * @return true, if all was available
+	 */
+	boolean isAll() {
+		return all;
+	}
+
+	/**
+	 * Get the base selector.
+	 * 
+	 * @return the selector
+	 */
+	String getSelector() {
+		return selector;
+	}
+
+	/**
+	 * Get the base selector as single size array.
+	 * 
+	 * @return the selector
+	 */
+	String[] getSelectors() {
+		return baseSelector;
+	}
+
+	/**
+	 * Get selector to extends.
+	 * 
+	 * @return the selector
+	 */
+	String getExtendingSelector() {
+		return extendingSelector;
+	}
+
+	/**
+	 * For debugging of the library.
+	 * 
+	 * @return the debug string
+	 */
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		for (int i = 0; i < baseSelector.length; i++) {
+			if (i > 0) {
+				builder.append(',');
+			}
+			builder.append(baseSelector[i]);
+		}
+		builder.append(":extend(");
+		builder.append(extendingSelector);
+		if (all) {
+			builder.append(" all");
+		}
+		builder.append(")");
+		return builder.toString();
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public int getType() {
+		return EXTENDS;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public void appendTo(CssFormatter formatter) {
+		formatter.add(this);
+	}
+}

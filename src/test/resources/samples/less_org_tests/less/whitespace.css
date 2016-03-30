@@ -1,0 +1,26 @@
+.whitespace {
+  color: white;
+  color: white;
+  color: white;
+  color: white;
+  color: white;
+}
+.white,
+.space,
+.mania {
+  color: white;
+}
+.no-semi-column {
+  color: white;
+  color: white;
+  white-space: pre;
+  border: 2px solid white;
+}
+.newlines {
+  background: the, great, wall;
+  border: 2px solid black;
+}
+.sel .newline_ws .tab_ws {
+  color: white;
+  background-position: 45 -23;
+}
